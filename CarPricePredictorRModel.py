@@ -408,3 +408,112 @@ print()
 print("Modello di regressione lineare metriche:")
 for metrica, valori in risultati.items():
     print(f"{metrica} medio: {np.mean(valori)}")
+
+valore_massimo = dataset['Price'].max()
+valore_minimo = dataset['Price'].min()
+
+print(f"Valore massimo: {valore_massimo}")
+print(f"Valore minimo: {valore_minimo}")
+
+"""tutte le metriche sono mogliorate risulta generalmente mogliore.
+
+**R-squared medio:**
+Il R-squared medio è negativo, il che indica che il modello di regressione lineare non riesce a catturare la variazione nei dati di output. Potrebbe indicare che il modello non è adatto per il tipo di relazione tra le variabili indipendenti e dipendenti.
+
+**Errore Assoluto Medio (MAE) medio:**
+Il MAE medio è di circa 0.072, il che potrebbe essere considerato relativamente basso. Indica che, in media, le predizioni del modello si discostano di circa 0.051 unità dalla variabile target reale.
+
+**Errore Quadrato Medio (MSE) medio: **
+Il MSE medio è di circa 1.000, il che rappresenta la media degli errori quadrati. Tuttavia, questa metrica può essere influenzata da valori anomali.
+
+**Radice dell'Errore Quadrato Medio (RMSE) medio:**
+Il RMSE medio è di circa 0.408, che rappresenta la radice quadrata del MSE. Indica la deviazione standard degli errori del modello. Come il MAE, è una misura della precisione delle predizioni.
+
+Il R-squared (coefficiente di determinazione) fornisce una misura della bontà di adattamento del modello ai dati. Il suo valore può variare da -∞ a 1, dove 1 indica un modello perfetto che spiega tutta la variazione nei dati. Tuttavia, è possibile ottenere valori negativi, il che indica che il modello è peggiore rispetto a un modello medio che prenderebbe semplicemente la media della variabile target.
+
+Un R-squared negativo può verificarsi quando il modello lineare non è in grado di catturare la variazione nei dati, e l'output previsto è peggio di una semplice stima della media. In altre parole, il modello non fornisce alcun beneficio rispetto a una stima costante. Questo può accadere quando la relazione tra le variabili indipendenti e dipendenti non è approssimabile da una funzione lineare.
+
+In sostanza, un R-squared medio negativo indica che il modello di regressione lineare attuale non è adatto per la previsione della variabile target nel tuo dataset. Potrebbe essere necessario esplorare modelli più complessi o considerare altre trasformazioni delle variabili per migliorare le prestazioni del modello.
+
+ANCHE ELIMINANDO MODEL I PARAMETRI NON SUBISCONO CAMBIAMENTI
+
+Normalità dei residui:
+
+Puoi controllare la normalità dei residui tracciando un istogramma dei residui o un grafico quantile-quantile (Q-Q plot). Se i residui seguono approssimativamente una distribuzione normale, allora la normalità è soddisfatta.
+Omoschedasticità:
+
+Per valutare l'omoschedasticità, traccia un grafico dei residui rispetto alle previsioni del modello. Se i residui mostrano una dispersione costante e uniforme lungo tutti i valori previsti, allora l'omoschedasticità è presente. Altrimenti, potrebbe esserci eteroschedasticità.
+Indipendenza degli errori:
+
+Puoi controllare l'indipendenza degli errori tracciando un grafico dei residui nel tempo (se i dati sono temporali) o in base all'ordine di osservazione. Se non c'è nessun modello evidente o tendenza nei residui, allora l'indipendenza degli errori è probabile.
+"""
+
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error
+
+# Supponiamo che 'X' sia la tua variabile indipendente e 'y' sia la tua variabile dipendente
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Crea e addestra il modello di regressione lineare
+modello_lineare = LinearRegression()
+modello_lineare.fit(X_train, y_train)
+
+# Effettua le previsioni
+previsioni = modello_lineare.predict(X_test)
+
+# Calcola i residui
+residui = y_test - previsioni
+
+plt.figure(figsize=(8, 6))
+plt.scatter(previsioni, residui)
+plt.title('Grafico dei Residui rispetto alle Previsioni')
+plt.xlabel('Previsioni')
+plt.ylabel('Residui')
+plt.grid(True)  # Aggiungi griglia per una migliore visualizzazione
+plt.show()
+
+"""non c'è Omoschedasticità, i residui del test seguno una semiretta"""
+
+import statsmodels.api as sm
+from statsmodels.stats.diagnostic import het_breuschpagan
+
+# Aggiungi una colonna costante a X_osservazioni
+X_osservazioni = sm.add_constant(X_test)
+
+# Calcola i residui del modello
+residui = y_test - previsioni
+
+# Esegui il test di Breusch-Pagan
+_, p_value, _, _ = het_breuschpagan(residui, X_osservazioni)
+print(f"P-value del test di Breusch-Pagan: {p_value}")
+
+"""Conferma di non omoschedaticita il valore è minore di 0.05."""
+
+import statsmodels.api as sm
+import matplotlib.pyplot as plt
+
+# Crea il Q-Q plot
+sm.qqplot(residui, line='s')
+plt.show()
+
+"""Il Q-Q plot confronta i quantili osservati dei residui con i quantili teorici di una distribuzione normale. Visto che i punti nel Q-Q plot si allineano approssimativamente con una linea retta rossa, significa che i residui seguono una distribuzione normale."""
+
+import statsmodels.api as sm
+
+# Supponiamo che 'residui' siano gli errori residui del tuo modello
+durbin_watson_statistic = sm.stats.stattools.durbin_watson(residui)
+
+# Stampa il risultato del test di Durbin-Watson
+print(f"Statistiche del test di Durbin-Watson: {durbin_watson_statistic}")
+
+# Interpretazione del risultato
+if durbin_watson_statistic < 1.5:
+    print("Autocorrelazione positiva nei residui.")
+elif durbin_watson_statistic > 2.5:
+    print("Autocorrelazione negativa nei residui.")
+else:
+    print("Gli errori residui sono indipendenti.")
+
+"""Il valore del testi è vicino a 2 quindi i residui sono indipendenti"""
